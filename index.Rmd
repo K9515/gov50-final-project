@@ -9,6 +9,7 @@ output:
 
 
 
+
 ## Project thoughts
 
 I am interested in looking at something related to policing in the US. Currently I'm in a class about mass incarceration and I'm going to speak to the professors about what data sets are avaialble this week. I'm thinking of potentially looking at the efficacy of mandatory minimums or expanding on the work of my professors to look at the relationship between crime rate and police per capita.
