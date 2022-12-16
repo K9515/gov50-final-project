@@ -1,18 +1,83 @@
 ---
-title: "Something to do with policing and incarceration"
+title: "Elected vs Appointed State Supreme Courts and Caseload"
 author: "Kate De Groote"
-description: "I don't have a definitive description yet but perhaps the relationship between crime rate and police per capita"
+description: "A look at the relationship between the number of cases a state supreme court takes on in a given year and whether the court was elected or appointed"
 output:
   distill::distill_article:
     self_contained: false
 ---
 
 
+## Introduction
+
+In this project I set out to look at this question:
+Is there a relationship between whether a state supreme court is elected or appointed and the caseload the court takes on per year?
+My hypothesis was that there is a relationship that I predict to be statistically significant. I predict that courts that are elected will take on more cases than appointed courts. My reasoning behind this is that elected judges might want to prove competency to the public that elect them by producing more case decisions, while appointed judges don't have that worry.
+
+This is an interesting thing to study because while much scholarly work has been done on the US Supreme Court, there is a severe lack of data and scholarly work on State Supreme Courts. This matters because many of the decisions and cases that are handled at the state level become precursors for nationwide cases and have significant impact on how the law is viewed. Understanding the relationship between how these courts are created and their resulting actions is important for determining how these courts can be improved.
 
 
-## Project thoughts
+## Data
 
-I am interested in looking at something related to policing in the US. Currently I'm in a class about mass incarceration and I'm going to speak to the professors about what data sets are avaialble this week. I'm thinking of potentially looking at the efficacy of mandatory minimums or expanding on the work of my professors to look at the relationship between crime rate and police per capita.
+The data set I am using comes from a journal article titled "New Data on State Supreme Court Cases" which was published in State Politics & Policy Quarterly in December of 2013. I was unable to find any data sets on State Supreme Courts that were more recent, which speaks again to how understudied this topic in modern political science is. This data set contains every state supreme court ruling from 1995 through 2010 which comes out to 168,581 observations. This data was compiled using automated textual analysis and automated coding. My research design here is cross-sectional.
 
+The dependent variable in this project is the number of cases a certain court takes on in a given year. This is calculated by grouping by year and then finding the frequency for each state.
+
+The independent variable is whether the given court was appointed or elected. In order to determine this I did outside research and then created a new variable called elected. This categorizes a state into one of two categories: "Elected" vs. "Appointed". 
+
+
+```{r}
+library(tidyverse)
+mydata <- read_csv("mydata.csv")
+#sum(is.na(mydata$state))
+mydata <- mydata|>
+  mutate(elected = case_when(fips==1|fips==17|fips==22|fips==35|fips==37|fips==42|fips==48|fips==3|fips==13|fips==16|fips==21|fips==27|fips==28|fips==30|fips==32|fips==38|fips==41|fips==53|fips==54|fips==55|fips==26|fips==39|fips==51|fips==45 ~ "Elected", fips==2|fips==4|fips==6|fips==8|fips==9|fips==10|fips==12|fips==15|fips==18|fips==19|fips==20|fips==23|fips==24|fips==25|fips==29|fips==31|fips==33|fips==34|fips==36|fips==40|fips==44|fips==46|fips==47|fips==49|fips==50|fips==56 ~ "Appointed"))
+
+```
+
+
+```{r}
+yearstate <- mydata|> 
+  select(state, Year, elected)|>
+  filter(!is.na(elected))|>
+  group_by(Year, elected)|>
+  mutate(yearfreq = n())|>
+  distinct(state, .keep_all = TRUE)|>
+  filter(yearfreq > 2000)
+
+```
+
+Below is a plot that shows the frequency of cases per year. Each datapoint in this plot is a certain court for a certain year. From this one can see that there is quite a variety of the number of cases a court sees from about 3,000-6,000.
+
+```{r}
+ggplot(yearstate, mapping = aes(yearfreq)) + 
+  geom_histogram() +
+  labs(title = "Frequency of Cases Per Year", x = "Cases Per Year for a Given Court", y = "Count")
+  
+```
+
+
+## Results
+
+Below is a boxplot that shows the frequency of cases per year for elected courts vs appointed courts. From this it is pretty easy to see that there is a significant difference in the number of cases that are taken on when a court is elected vs appointed. The median for elected courts is around 6,000 while the median for appointed courts is about 4,500.
+
+
+```{r}
+ggplot(yearstate, mapping = aes(elected, yearfreq)) + 
+  geom_boxplot() + 
+  labs(title = "Frequency of Cases Per Year for Elected vs. Appointed Courts", x = "Elected", y = "Cases Per Year for a Given Court")
+```
+Below is the regression done for this relationship where I also make sure to account for state. The main coefficient of interest in this regression is 1539.375, which means that if a court is elected they will deliver take on on 1539.375 more cases per year than if the court was appointed. This coefficient is very statistically significant, shown by the three stars in the output table. This means it is significant at the .001 level. However, we still can't say that this effect is causal, as not all potential confounders are accounted for. We simply can say there is a statistically significant relationship.
+
+
+```{r}
+fit <- lm(yearfreq ~ elected + factor(Year) + state, data = yearstate)
+library(modelsummary)
+modelsummary(fit, stars = TRUE)
+```
+
+## Conclusion
+
+In conclusion, I found a statistically significant relationship between the number of cases a state supreme court takes on in a year and whether the court was appointed or elected. This relationship is in line with my hypothesis that elected courts see more cases. My results show support for this hypothesis to a large extent. Limitations to my analysis come from simply a lack of other data on potential confounders, as I was only really able to account for states, but other data points like election years, the political leaning of the bench, the political leaning of the decision, the judge split on the decision, etc would be important to have for a more complex analysis. One thing that would improve my analysis is to do a randomized study looking at individual judges in the US over the span on a few years. That would make the results more specific and less prone to confounding variables.
 
 
